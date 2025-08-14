@@ -514,7 +514,7 @@
                     }
                 }
                 
-                doc.save(`Parte_Diario_Noticias${today.replace(/\//g, '-')}.pdf`);
+                doc.save(`Parte_Diario_Noticias_${today.replace(/\//g, '-')}.pdf`);
             } catch (error) {
                 console.error("Error al generar PDF:", error);
                 alert("Ocurrió un error al generar el PDF: " + error.message);
@@ -529,4 +529,5 @@
 </body>
 
 </html>
+
 

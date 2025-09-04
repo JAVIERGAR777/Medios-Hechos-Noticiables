@@ -3,531 +3,951 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Partes de Medios Periodisticos</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <title>Reporte Diario</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        #map { height: 100vh; width: 70%; float: left; }
-        #sidebar { 
-            width: 30%; 
-            float: right; 
-            padding: 20px; 
-            height: 100vh;
-            overflow-y: auto;
-            background: #f8f9fa;
-            border-left: 1px solid #ddd;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .filter-section { 
-            margin-bottom: 25px;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        
+        body {
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
         }
-        h4 { 
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-            font-weight: 600;
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px;
         }
-        .btn-export {
-            background: #e74c3c;
+        
+        header {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
             color: white;
+            padding: 15px 0;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+        
+        .controls-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
+            background: white;
+            padding: 12px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .date-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        #date-picker {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 5px;
+            font-size: 0.9rem;
             font-weight: 500;
-            padding: 8px 15px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
             border: none;
             border-radius: 5px;
-            transition: all 0.3s;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        #map-container {
-            position: relative;
-            height: 100%;
-            width: 100%;
+        
+        .btn:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12);
         }
-        .map-clone {
-            position: absolute;
-            left: -9999px;
-            width: 800px;
-            height: 600px;
+        
+        .btn-pdf {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
         }
-        /* 0.5cm arriba */
-        .map-label {
-            color: #000;
-            font-size: 12px;
-            font-weight: bold;
+        
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+            gap: 8px;
+        }
+        
+        .tab-btn {
+            padding: 8px 16px;
+            background-color: #e2e8f0;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .tab-btn:hover {
+            background-color: #cbd5e1;
+        }
+        
+        .tab-btn.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             text-align: center;
-            pointer-events: none;
-            text-shadow: 0 0 3px white, 0 0 3px white;
-            background-color: rgba(255, 255, 255, 0.7);
-            padding: 2px 5px;
-            border-radius: 3px;
-            white-space: nowrap;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%) translateY(-19px); /* 0.5cm ≈ 19px */
-            z-index: 1000;
-        }
-        /* Contenedor del pin */
-        .custom-pin-container {
+            color: white;
             position: relative;
-            width: 100%;
-            height: 100%;
+            overflow: hidden;
         }
-        /* Estilo mejorado para pines */
-        .custom-pin {
-            background: #ff4444;
+        
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.15);
             border-radius: 50%;
+        }
+        
+        .stat-card:nth-child(2) {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            opacity: 0.9;
+            letter-spacing: 0.5px;
+        }
+        
+        .event-type-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .event-type-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            border-left: 4px solid #3b82f6;
+            transition: transform 0.2s ease;
+        }
+        
+        .event-type-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .event-type-number {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+        
+        .event-type-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+        
+        .map-container {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 15px;
+            height: 400px;
+            position: relative;
+        }
+        
+        #map {
+            height: 100%;
+            border-radius: 6px;
+        }
+        
+        .legend {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 15px;
+        }
+        
+        .legend h3 {
+            margin-bottom: 12px;
+            color: #1e293b;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #f8fafc;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .legend-color {
             width: 18px;
             height: 18px;
-            border: 2px solid white;
-            box-shadow: 0 0 10px rgba(255, 50, 50, 0.8);
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
-        /* Animación de pulso para los pines */
-        @keyframes pulse {
-            0% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(255, 50, 50, 0.7); }
-            70% { transform: translate(-50%, -50%) scale(1.05); box-shadow: 0 0 0 10px rgba(255, 50, 50, 0); }
-            100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(255, 50, 50, 0); }
+        
+        .table-container {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow-x: auto;
+            margin-bottom: 15px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        th {
+            background-color: #f1f5f9;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 0.9rem;
+        }
+        
+        tr:hover {
+            background-color: #f8fafc;
+        }
+        
+        .btn-link {
+            display: inline-block;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-align: center;
+            min-width: 100px;
+        }
+        
+        .btn-link:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 1rem;
+            color: #64748b;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 15px;
+            font-size: 1rem;
+            color: #dc2626;
+            background-color: #fef2f2;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            color: #64748b;
+            font-size: 0.8rem;
+        }
+        
+        @media (max-width: 768px) {
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .event-type-container {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .controls-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .date-selector {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .map-container {
+                height: 350px;
+            }
+            
+            .btn-link {
+                padding: 10px 18px;
+                min-width: 120px;
+                font-size: 0.9rem;
+            }
+        }
+
+        .pdf-notice {
+            display: none;
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: #16a34a;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            font-size: 0.9rem;
+            font-weight: 600;
+            animation: fadeIn 0.4s, fadeOut 0.4s 2s forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-15px); }
+        }
+
+        /* Estilos para mejorar la visualización de los puntos en el PDF */
+        .high-visibility-marker {
+            filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.7));
         }
     </style>
 </head>
 <body>
-    <div id="map-container">
-        <div id="map"></div>
-    </div>
-    <div id="sidebar">
-        <h4>Mapeo Hechos Noticiables</h4>
+    <div class="container">
+        <header>
+            <h1>Reporte Diario de Medios y Victimología</h1>
+        </header>
         
-        <div class="filter-section">
-            <h5>Filtro por Fecha</h5>
-            <div class="row g-2 mb-3">
-                <div class="col-md-6">
-                    <label for="start-date" class="form-label">Desde:</label>
-                    <input type="date" id="start-date" class="form-control">
+        <div class="controls-container">
+            <div class="date-selector">
+                <label for="date-picker" style="font-weight: 600; font-size: 0.9rem;">Fecha:</label>
+                <input type="date" id="date-picker">
+                <button class="btn" id="generate-btn">Generar</button>
+            </div>
+            <button class="btn btn-pdf" id="pdf-btn">Exportar PDF</button>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab-btn active" id="daily-btn">Reporte Diario de Medios y Victimología</button>
+            <button class="tab-btn" id="weekly-btn">Reporte Quincenal</button>
+        </div>
+        
+        <div id="error-message" class="error" style="display: none;"></div>
+        
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-number" id="total-events">0</div>
+                <div class="stat-label">EVENTOS TOTALES</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-victims">0</div>
+                <div class="stat-label">VÍCTIMAS TOTALES</div>
+            </div>
+        </div>
+        
+        <div class="event-type-container" id="event-type-cards">
+            <!-- Los contadores por tipo de evento se insertarán aquí mediante JavaScript -->
+        </div>
+        
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+        
+        <div class="legend">
+            <h3>Leyenda de Tipos de Eventos</h3>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #e74c3c;"></div>
+                    <span>Entradera</span>
                 </div>
-                <div class="col-md-6">
-                    <label for="end-date" class="form-label">Hasta:</label>
-                    <input type="date" id="end-date" class="form-control">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #3498db;"></div>
+                    <span>Robo de Pertenencias</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #2ecc71;"></div>
+                    <span>Robo Vehícular</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #f39c12;"></div>
+                    <span>Incendio</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #9b59b6;"></div>
+                    <span>Escruche</span>
                 </div>
             </div>
-            <button id="apply-dates" class="btn btn-primary btn-sm">Aplicar Fechas</button>
         </div>
         
-        <div class="filter-section">
-            <h5>Filtro por Tipología</h5>
-            <div id="category-list" style="max-height: 300px; overflow-y: auto;" class="mb-3"></div>
-            <button id="export-pdf" class="btn-export w-100">
-                Exportar Reporte PDF
-            </button>
+        <div class="table-container">
+            <h2 id="table-title" style="font-size: 1.2rem; margin-bottom: 12px; color: #1e293b; text-align: center;">Eventos del Día</h2>
+            <div class="loading" id="loading-indicator">Cargando datos desde SheetBest...</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Tipología</th>
+                        <th>Momento</th>
+                        <th>Entorno</th>
+                        <th>Descripción</th>
+                        <th>Víctimas</th>
+                        <th>Enlace</th>
+                    </tr>
+                </thead>
+                <tbody id="events-table-body">
+                    <!-- Los datos se insertarán aquí mediante JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        
+        <footer>
+            <p>Plataforma de Visualización de Eventos &copy; 2025</p>
+        </footer>
+
+        <div class="pdf-notice" id="pdf-notice">
+            ¡PDF generado con éxito!
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        const map = L.map('map').setView([-34.9294, -57.9616], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
+        // URL de la API de Sheetbest
+        const SHEETBEST_URL = 'https://api.sheetbest.com/sheets/63d0e8d5-5d04-468f-baea-a951c8d5c55a';
+        
+        // Colores para los diferentes tipos de eventos (más contrastados)
+        const eventColors = {
+            "Entradera": "#e74c3c",
+            "Robo de Pertenencias": "#3498db",
+            "Robo Vehícular": "#2ecc71",
+            "Incendio": "#f39c12",
+            "Escruche": "#9b59b6"
+        };
 
-        let markers = [];
-        let allData = [];
-        const { jsPDF } = window.jspdf;
-
-        function splitText(text, maxWidth, doc) {
-            if (!text) return [''];
-            const lines = [];
-            let currentLine = '';
+        // Variables globales
+        let map;
+        let allEventsData = [];
+        let currentDate = '';
+        let mapMarkers = [];
+        
+        // Inicializar el mapa
+        function initMap() {
+            map = L.map('map').setView([-34.921, -57.955], 12);
             
-            text.split(' ').forEach(word => {
-                if (doc.getTextWidth(currentLine + word) < maxWidth) {
-                    currentLine += (currentLine ? ' ' : '') + word;
-                } else {
-                    lines.push(currentLine);
-                    currentLine = word;
-                }
-            });
-            
-            if (currentLine) lines.push(currentLine);
-            return lines;
+            // Añadir capa de OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
         }
-
+        
+        // Mostrar mensaje de error
+        function showError(message) {
+            const errorElement = document.getElementById('error-message');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+        
+        // Ocultar mensaje de error
+        function hideError() {
+            document.getElementById('error-message').style.display = 'none';
+        }
+        
+        // Mostrar notificación de PDF
+        function showPdfNotice() {
+            const notice = document.getElementById('pdf-notice');
+            notice.style.display = 'block';
+            
+            // Ocultar después de 3 segundos
+            setTimeout(() => {
+                notice.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Cargar datos desde Sheetbest
         async function loadData() {
             try {
-                const response = await fetch('https://api.sheetbest.com/sheets/9dd7bf8a-f8cf-4cdb-9a08-c781e1652e43');
-                allData = await response.json();
-                processData(allData);
-                setupFilters();
-                updateMap();
+                document.getElementById('loading-indicator').style.display = 'block';
+                hideError();
+                
+                console.log('Cargando datos desde:', SHEETBEST_URL);
+                const response = await fetch(SHEETBEST_URL);
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Datos recibidos:', data);
+                
+                if (!Array.isArray(data)) {
+                    throw new Error('Formato de datos inesperado. Se esperaba un array.');
+                }
+                
+                allEventsData = data.map(item => {
+                    return {
+                        coordenadas: item['Pegar Coordenadas'] || '',
+                        fecha: item['Fecha'] || '',
+                        tipologia: item['Tipología del Evento'] || '',
+                        momento: item['Momento del Dia del Hecho'] || '',
+                        entorno: item['Entorno en que ocurre el evento'] || '',
+                        descripcion: item['Breve Descripción del Evento'] || '',
+                        victimas: item['Cantidad de Victimas ( solo indicar en número)'] || 0,
+                        enlace: item['Link de Nota'] || ''
+                    };
+                }).filter(item => item.fecha); 
+                
+                console.log('Datos procesados:', allEventsData);
+                
+                if (allEventsData.length > 0) {
+                    const latestDate = findLatestDate(allEventsData);
+                    document.getElementById('date-picker').value = convertToInputDateFormat(latestDate);
+                    
+                    processDataForDate(latestDate);
+                }
+                
+                document.getElementById('loading-indicator').style.display = 'none';
             } catch (error) {
-                console.error("Error:", error);
-                alert("Error al cargar datos. Recarga la página.");
+                console.error('Error al cargar datos:', error);
+                document.getElementById('loading-indicator').style.display = 'none';
+                showError(`Error al cargar datos: ${error.message}. Verifica la consola para más detalles.`);
             }
         }
-
-        function processData(data) {
-            markers = data.filter(item => item.X && item.Y).map(item => {
-                const dateParts = item.Fecha?.split('/') || [];
-                const dateObj = dateParts.length === 3 ? 
-                    new Date(dateParts[2], dateParts[1] - 1, dateParts[0]) : null;
-                
-                return {
-                    latlng: [parseFloat(item.Y), parseFloat(item.X)],
-                    fecha: dateObj,
-                    fechaStr: item.Fecha || 'Sin fecha',
-                    tipo: item.Tipologias || 'Sin categoría',
-                    titulo: item.Titulo || 'Sin título',
-                    direccion: item.Dirección || 'Sin dirección',
-                    observaciones: item.Observaciones || 'Sin detalles'
-                };
+        
+        function findLatestDate(events) {
+            let latestDate = '';
+            let latestTime = 0;
+            
+            events.forEach(event => {
+                if (event.fecha) {
+                    const parts = event.fecha.split('/');
+                    if (parts.length === 3) {
+                        const day = parseInt(parts[0]);
+                        const month = parseInt(parts[1]) - 1;
+                        const year = parseInt(parts[2]);
+                        const date = new Date(year, month, day);
+                        const timestamp = date.getTime();
+                        
+                        if (timestamp > latestTime) {
+                            latestTime = timestamp;
+                            latestDate = event.fecha;
+                        }
+                    }
+                }
             });
+            
+            return latestDate || (events.length > 0 ? events[0].fecha : '');
         }
-
-        function setupFilters() {
-            const container = document.getElementById('category-list');
-            const categories = [...new Set(allData.map(item => item.Tipologias).filter(Boolean))];
-            
-            categories.forEach((cat, i) => {
-                const count = markers.filter(m => m.tipo === cat).length;
-                const div = document.createElement('div');
-                div.className = 'form-check mb-2';
-                div.innerHTML = `
-                    <input class="form-check-input cat-filter" type="checkbox" 
-                           id="cat-${i}" value="${cat}" checked>
-                    <label class="form-check-label" for="cat-${i}">
-                        ${cat} <span class="text-muted">(${count})</span>
-                    </label>
-                `;
-                container.appendChild(div);
-            });
-            
-            document.querySelectorAll('.cat-filter').forEach(cb => {
-                cb.addEventListener('change', updateMap);
-            });
-            
-            document.getElementById('apply-dates').addEventListener('click', updateMap);
-            document.getElementById('export-pdf').addEventListener('click', exportToPDF);
+        
+        function convertToInputDateFormat(dateStr) {
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                const day = parts[0].padStart(2, '0');
+                const month = parts[1].padStart(2, '0');
+                const year = parts[2];
+                return `${year}-${month}-${day}`;
+            }
+            return '';
         }
-
-        function updateMap() {
-            const startDate = document.getElementById('start-date').value;
-            const endDate = document.getElementById('end-date').value;
-            const selectedCats = Array.from(
-                document.querySelectorAll('.cat-filter:checked')
-            ).map(cb => cb.value);
+        
+        function convertToSheetDateFormat(dateStr) {
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                const year = parts[0];
+                const month = parseInt(parts[1]);
+                const day = parseInt(parts[2]);
+                return `${day}/${month}/${year}`;
+            }
+            return '';
+        }
+        
+        function processDataForDate(dateStr) {
+            currentDate = dateStr;
+            console.log('Procesando datos para fecha:', dateStr);
             
-            markers.forEach(marker => {
-                if (marker.layer) map.removeLayer(marker.layer);
+            const filteredEvents = allEventsData.filter(event => {
+                return event.fecha === dateStr;
             });
             
-            markers.forEach(marker => {
-                const dateOK = !startDate || !marker.fecha || 
-                             new Date(marker.fecha) >= new Date(startDate);
-                const dateOK2 = !endDate || !marker.fecha || 
-                              new Date(marker.fecha) <= new Date(endDate);
-                const catOK = selectedCats.length === 0 || selectedCats.includes(marker.tipo);
-                
-                if (dateOK && dateOK2 && catOK) {
-                    const pin = L.marker(marker.latlng, {
-                        icon: L.divIcon({
-                            className: 'custom-pin-icon',
-                            html: `
-                                <div class="custom-pin-container">
-                                    <div class="custom-pin"></div>
-                                    <div class="map-label">${marker.direccion}</div>
+            console.log('Eventos filtrados:', filteredEvents);
+            
+            document.getElementById('total-events').textContent = filteredEvents.length;
+            
+            const totalVictims = filteredEvents.reduce((sum, event) => {
+                const victimCount = parseVictimCount(event.victimas);
+                return sum + victimCount;
+            }, 0);
+            
+            document.getElementById('total-victims').textContent = totalVictims;
+            
+            updateEventTypeCounters(filteredEvents);
+            
+            document.getElementById('table-title').textContent = `Eventos del Día (${dateStr})`;
+            
+            clearMap();
+            
+            let hasValidCoordinates = false;
+            mapMarkers = [];
+            
+            filteredEvents.forEach(event => {
+                if (event.coordenadas) {
+                    try {
+                        const coords = event.coordenadas.split(',').map(coord => {
+                            return parseFloat(coord.trim().replace(/[^\d.-]/g, ''));
+                        });
+                        
+                        if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+                            const [lat, lng] = coords;
+                            const eventType = event.tipologia || 'Desconocido';
+                            const color = eventColors[eventType] || '#7f8c8d';
+                            
+                            const marker = L.circleMarker([lat, lng], {
+                                color: '#000',
+                                weight: 2,
+                                fillColor: color,
+                                fillOpacity: 0.9,
+                                radius: 12,
+                                className: 'high-visibility-marker'
+                            }).addTo(map);
+                            
+                            marker.bindPopup(`
+                                <div style="max-width: 250px; font-size: 0.9rem;">
+                                    <strong style="color: ${color}; font-size: 1.1rem;">${eventType}</strong><br>
+                                    <strong>Fecha:</strong> ${event.fecha}<br>
+                                    <strong>Momento:</strong> ${event.momento}<br>
+                                    <strong>Entorno:</strong> ${event.entorno}<br>
+                                    <strong>Descripción:</strong> ${event.descripcion || 'Sin descripción'}<br>
+                                    <strong>Víctimas:</strong> ${parseVictimCount(event.victimas)}<br>
+                                    ${event.enlace ? `<a href="${event.enlace}" target="_blank" class="btn-link">Ver noticia</a>` : ''}
                                 </div>
-                            `,
-                            iconSize: [30, 40],
-                            iconAnchor: [15, 20]
-                        })
-                    }).addTo(map)
-                    .bindPopup(`
-                        <div style="min-width: 250px">
-                            <h6 style="color: #2c3e50; margin-bottom: 10px">${marker.titulo}</h6>
-                            <p><b>Tipo:</b> ${marker.tipo}</p>
-                            <p><b>Fecha:</b> ${marker.fechaStr}</p>
-                            <p><b>Dirección:</b> ${marker.direccion}</p>
-                            <p><b>Observaciones:</b> ${marker.observaciones}</p>
-                        </div>
-                    `);
-                    
-                    marker.layer = pin;
+                            `);
+                            
+                            mapMarkers.push(marker);
+                            hasValidCoordinates = true;
+                        }
+                    } catch (e) {
+                        console.error('Error procesando coordenadas:', event.coordenadas, e);
+                    }
                 }
             });
-        }
-
-        async function captureMap() {
-            return new Promise((resolve) => {
-                const tempDiv = document.createElement('div');
-                tempDiv.className = 'map-clone';
-                document.body.appendChild(tempDiv);
-                
-                const mapClone = document.getElementById('map').cloneNode(true);
-                mapClone.style.width = '800px';
-                mapClone.style.height = '600px';
-                tempDiv.appendChild(mapClone);
-                
-                setTimeout(() => {
-                    const tempMap = L.map(mapClone).setView(map.getCenter(), map.getZoom());
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap'
-                    }).addTo(tempMap);
-                    
-                    const startDate = document.getElementById('start-date').value;
-                    const endDate = document.getElementById('end-date').value;
-                    const selectedCats = Array.from(
-                        document.querySelectorAll('.cat-filter:checked')
-                    ).map(cb => cb.value);
-                    
-                    const filteredMarkers = markers.filter(marker => {
-                        const dateOK = !startDate || !marker.fecha || 
-                                     new Date(marker.fecha) >= new Date(startDate);
-                        const dateOK2 = !endDate || !marker.fecha || 
-                                      new Date(marker.fecha) <= new Date(endDate);
-                        const catOK = selectedCats.length === 0 || selectedCats.includes(marker.tipo);
-                        return dateOK && dateOK2 && catOK;
-                    });
-                    
-                    filteredMarkers.forEach(marker => {
-                        L.marker(marker.latlng, {
-                            icon: L.divIcon({
-                                className: 'custom-pin-icon',
-                                html: `
-                                    <div class="custom-pin-container">
-                                        <div class="custom-pin"></div>
-                                        <div class="map-label">${marker.direccion}</div>
-                                    </div>
-                                `,
-                                iconSize: [30, 40],
-                                iconAnchor: [15, 20]
-                            })
-                        }).addTo(tempMap);
-                    });
-                    
-                    setTimeout(() => {
-                        html2canvas(mapClone, {
-                            scale: 1,
-                            logging: false,
-                            useCORS: true,
-                            allowTaint: true,
-                            scrollX: 0,
-                            scrollY: 0,
-                            windowWidth: mapClone.scrollWidth,
-                            windowHeight: mapClone.scrollHeight
-                        }).then(canvas => {
-                            const imageData = canvas.toDataURL('image/png');
-                            document.body.removeChild(tempDiv);
-                            resolve(imageData);
-                        }).catch(error => {
-                            console.error("Error al capturar:", error);
-                            document.body.removeChild(tempDiv);
-                            resolve(null);
-                        });
-                    }, 1000);
-                }, 1500);
-            });
-        }
-
-        async function exportToPDF() {
-            const exportBtn = document.getElementById('export-pdf');
-            const originalText = exportBtn.innerHTML;
-            exportBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generando PDF...';
-            exportBtn.disabled = true;
             
-            try {
-                const doc = new jsPDF();
-                const startDate = document.getElementById('start-date').value;
-                const endDate = document.getElementById('end-date').value;
-                const selectedCats = Array.from(
-                    document.querySelectorAll('.cat-filter:checked')
-                ).map(cb => cb.value);
-                
-                const filteredData = markers.filter(marker => {
-                    const dateOK = !startDate || !marker.fecha || 
-                                 new Date(marker.fecha) >= new Date(startDate);
-                    const dateOK2 = !endDate || !marker.fecha || 
-                                  new Date(marker.fecha) <= new Date(endDate);
-                    const catOK = selectedCats.length === 0 || selectedCats.includes(marker.tipo);
-                    return dateOK && dateOK2 && catOK;
+            if (hasValidCoordinates && mapMarkers.length > 0) {
+                const markerGroup = new L.featureGroup(mapMarkers);
+                const bounds = markerGroup.getBounds();
+                map.fitBounds(bounds, { padding: [50, 50] });
+            } else {
+                map.setView([-34.921, -57.955], 12);
+                console.warn('No se encontraron coordenadas válidas para los eventos');
+            }
+            
+            const tableBody = document.getElementById('events-table-body');
+            tableBody.innerHTML = '';
+            
+            if (filteredEvents.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="7" style="text-align: center;">No hay eventos para esta fecha</td>`;
+                tableBody.appendChild(row);
+            } else {
+                filteredEvents.forEach(event => {
+                    const row = document.createElement('tr');
+                    
+                    row.innerHTML = `
+                        <td>${event.fecha || ''}</td>
+                        <td>${event.tipologia || ''}</td>
+                        <td>${event.momento || ''}</td>
+                        <td>${event.entorno || ''}</td>
+                        <td>${event.descripcion || ''}</td>
+                        <td>${parseVictimCount(event.victimas)}</td>
+                        <td>${event.enlace ? `<a href="${event.enlace}" target="_blank" class="btn-link">Ver noticia</a>` : 'N/A'}</td>
+                    `;
+                    
+                    tableBody.appendChild(row);
                 });
-                
-                const grouped = {};
-                filteredData.forEach(item => {
-                    if (!grouped[item.tipo]) grouped[item.tipo] = [];
-                    grouped[item.tipo].push(item);
-                });
-                
-                const today = new Date().toLocaleDateString('es-AR');
-                const pageWidth = doc.internal.pageSize.getWidth();
-                const margin = 15;
-                const contentWidth = pageWidth - margin * 2;
-                let yPos = 20;
-                
-                doc.setFontSize(18);
-                doc.setTextColor(44, 62, 80);
-                doc.setFont("helvetica", "bold");
-                doc.text("PARTE DIARIO DE NOTICIAS RELEVANTES", pageWidth / 2, yPos, { align: 'center' });
-                yPos += 10;
-                
-                doc.setFontSize(12);
-                doc.setTextColor(100, 100, 100);
-                doc.setFont("helvetica", "normal");
-                doc.text("Secretaría de Seguridad La Plata", pageWidth / 2, yPos, { align: 'center' });
-                yPos += 10;
-                
-                doc.setFontSize(10);
-                doc.text(`Fecha del reporte: ${today}`, pageWidth - margin, yPos, { align: 'right' });
-                yPos += 15;
-                
-                doc.setFontSize(14);
-                doc.setTextColor(44, 62, 80);
-                doc.setFont("helvetica", "bold");
-                doc.text("RESUMEN POR TIPOLOGÍA", margin, yPos);
-                yPos += 10;
-                
-                doc.setDrawColor(200, 200, 200);
-                doc.line(margin, yPos, pageWidth - margin, yPos);
-                yPos += 15;
-                
-                doc.setFontSize(10);
-                doc.setTextColor(70, 70, 70);
-                doc.setFont("helvetica", "normal");
-                
-                Object.keys(grouped).forEach(tipo => {
-                    doc.text(`• ${tipo}: ${grouped[tipo].length} casos`, margin + 5, yPos);
-                    yPos += 7;
-                });
-                
-                yPos += 10;
-                
-                doc.setDrawColor(52, 152, 219);
-                doc.setLineWidth(0.5);
-                doc.line(margin, yPos, pageWidth - margin, yPos);
-                yPos += 15;
-                
-                doc.setFontSize(14);
-                doc.setTextColor(44, 62, 80);
-                doc.setFont("helvetica", "bold");
-                doc.text("DETALLE DE NOTICIAS", margin, yPos);
-                yPos += 10;
-                
-                doc.setDrawColor(200, 200, 200);
-                doc.line(margin, yPos, pageWidth - margin, yPos);
-                yPos += 15;
-                
-                Object.keys(grouped).forEach(tipo => {
-                    doc.setFontSize(12);
-                    doc.setTextColor(52, 152, 219);
-                    doc.setFont("helvetica", "bold");
-                    doc.text(tipo.toUpperCase(), margin, yPos);
-                    yPos += 8;
-                    
-                    doc.setDrawColor(52, 152, 219);
-                    doc.setLineWidth(0.3);
-                    doc.line(margin, yPos, margin + 50, yPos);
-                    yPos += 10;
-                    
-                    doc.setFontSize(10);
-                    doc.setTextColor(70, 70, 70);
-                    doc.setFont("helvetica", "normal");
-                    
-                    grouped[tipo].forEach((item, i) => {
-                        if (yPos > 280) {
-                            doc.addPage();
-                            yPos = 20;
-                        }
-                        
-                        doc.setFontSize(12);
-                        doc.setTextColor(44, 62, 80);
-                        doc.setFont("helvetica", "bold");
-                        const titleLines = splitText(item.titulo, contentWidth, doc);
-                        titleLines.forEach(line => {
-                            doc.text(line, margin, yPos);
-                            yPos += 7;
-                        });
-                        
-                        doc.setFontSize(10);
-                        doc.setTextColor(70, 70, 70);
-                        doc.setFont("helvetica", "normal");
-                        
-                        doc.text(`Fecha: ${item.fechaStr}`, margin, yPos);
-                        yPos += 6;
-                        doc.text(`Dirección: ${item.direccion}`, margin, yPos);
-                        yPos += 6;
-                        
-                        doc.text("Observaciones:", margin, yPos);
-                        yPos += 6;
-                        
-                        const obsLines = splitText(item.observaciones, contentWidth, doc);
-                        obsLines.forEach(line => {
-                            doc.text(line, margin, yPos, { maxWidth: contentWidth });
-                            yPos += 6;
-                        });
-                        
-                        yPos += 10;
-                        
-                        if (i < grouped[tipo].length - 1) {
-                            doc.setDrawColor(220, 220, 220);
-                            doc.setLineWidth(0.1);
-                            doc.line(margin, yPos - 3, pageWidth - margin, yPos - 3);
-                            yPos += 5;
-                        }
-                    });
-                    
-                    yPos += 10;
-                });
-                
-                if (filteredData.length > 0) {
-                    if (yPos > 150) {
-                        doc.addPage();
-                        yPos = 20;
-                    }
-                    
-                    doc.setFontSize(14);
-                    doc.setTextColor(44, 62, 80);
-                    doc.setFont("helvetica", "bold");
-                    doc.text("MAPA DE UBICACIONES", margin, yPos);
-                    yPos += 10;
-                    
-                    doc.setDrawColor(200, 200, 200);
-                    doc.line(margin, yPos, pageWidth - margin, yPos);
-                    yPos += 10;
-                    
-                    const mapImage = await captureMap();
-                    
-                    if (mapImage) {
-                        const imgWidth = contentWidth;
-                        const imgHeight = contentWidth * 0.6;
-                        
-                        doc.addImage(mapImage, 'PNG', margin, yPos, imgWidth, imgHeight);
-                        yPos += imgHeight + 10;
-                    } else {
-                        doc.setFontSize(10);
-                        doc.setTextColor(150, 0, 0);
-                        doc.text("No se pudo generar la imagen del mapa", margin, yPos);
-                        yPos += 10;
-                    }
-                }
-                
-                doc.save(`Parte_Diario_Noticias_${today.replace(/\//g, '-')}.pdf`);
-            } catch (error) {
-                console.error("Error al generar PDF:", error);
-                alert("Ocurrió un error al generar el PDF: " + error.message);
-            } finally {
-                exportBtn.innerHTML = originalText;
-                exportBtn.disabled = false;
             }
         }
-
-        document.addEventListener('DOMContentLoaded', loadData);
+        
+        function clearMap() {
+            mapMarkers.forEach(marker => {
+                map.removeLayer(marker);
+            });
+            mapMarkers = [];
+        }
+        
+        function updateEventTypeCounters(events) {
+            const eventTypeContainer = document.getElementById('event-type-cards');
+            eventTypeContainer.innerHTML = '';
+            
+            const eventCounts = {};
+            events.forEach(event => {
+                const eventType = event.tipologia || 'Desconocido';
+                eventCounts[eventType] = (eventCounts[eventType] || 0) + 1;
+            });
+            
+            Object.entries(eventCounts).forEach(([eventType, count]) => {
+                const color = eventColors[eventType] || '#7f8c8d';
+                
+                const card = document.createElement('div');
+                card.className = 'event-type-card';
+                card.style.borderLeftColor = color;
+                
+                card.innerHTML = `
+                    <div class="event-type-number">${count}</div>
+                    <div class="event-type-label">${eventType.toUpperCase()}</div>
+                `;
+                
+                eventTypeContainer.appendChild(card);
+            });
+            
+            // Si no hay eventos, mostrar mensaje
+            if (Object.keys(eventCounts).length === 0) {
+                eventTypeContainer.innerHTML = '<div class="event-type-card" style="grid-column: 1 / -1; text-align: center;">No hay eventos registrados</div>';
+            }
+        }
+        
+        function parseVictimCount(victimCount) {
+            if (!victimCount && victimCount !== 0) return 0;
+            
+            if (typeof victimCount === 'string') {
+                if (victimCount.includes('+')) {
+                    return parseInt(victimCount.replace(/\D/g, '')) || 0;
+                }
+            }
+            
+            const parsed = parseInt(victimCount);
+            return isNaN(parsed) ? 0 : parsed;
+        }
+        
+        async function generatePDF() {
+            try {
+                const pdfBtn = document.getElementById('pdf-btn');
+                const originalText = pdfBtn.textContent;
+                pdfBtn.textContent = 'Generando...';
+                pdfBtn.disabled = true;
+                
+                if (mapMarkers.length > 0) {
+                    const markerGroup = new L.featureGroup(mapMarkers);
+                    const bounds = markerGroup.getBounds();
+                    map.fitBounds(bounds, { padding: [70, 70] });
+                    
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                
+                const pdfBtnElement = document.getElementById('pdf-btn');
+                const generateBtnElement = document.getElementById('generate-btn');
+                const datePickerElement = document.getElementById('date-picker');
+                const datePickerLabel = document.querySelector('.date-selector label');
+                const tabsElement = document.querySelector('.tabs');
+                const footerElement = document.querySelector('footer');
+                
+                pdfBtnElement.style.display = 'none';
+                generateBtnElement.style.display = 'none';
+                datePickerElement.style.display = 'none';
+                if (datePickerLabel) datePickerLabel.style.display = 'none';
+                tabsElement.style.display = 'none';
+                footerElement.style.display = 'none';
+                
+                const pdfTitle = document.createElement('h2');
+                pdfTitle.textContent = `Reporte Diario - ${currentDate}`;
+                pdfTitle.style.textAlign = 'center';
+                pdfTitle.style.marginBottom = '15px';
+                pdfTitle.style.color = '#1e293b';
+                pdfTitle.style.fontSize = '1.3rem';
+                pdfTitle.style.fontWeight = '700';
+                
+                const controlsContainer = document.querySelector('.controls-container');
+                controlsContainer.parentNode.insertBefore(pdfTitle, controlsContainer);
+                
+                const element = document.querySelector('.container');
+                
+                const canvas = await html2canvas(element, {
+                    scale: 2, 
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff',
+                    onclone: function(clonedDoc) {
+                        const links = clonedDoc.querySelectorAll('a');
+                        links.forEach(link => {
+                            link.style.color = 'white';
+                            link.style.textDecoration = 'none';
+                            link.setAttribute('target', '_blank');
+                        });
+                    }
+                });
+                
+                pdfBtnElement.style.display = 'block';
+                generateBtnElement.style.display = 'block';
+                datePickerElement.style.display = 'block';
+                if (datePickerLabel) datePickerLabel.style.display = 'block';
+                tabsElement.style.display = 'flex';
+                footerElement.style.display = 'block';
+                
+                pdfTitle.remove();
+                
+                const { jsPDF } = window.jspdf;
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const imgWidth = canvas.width;
+                const imgHeight = canvas.height;
+                const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+                const imgX = (pdfWidth - imgWidth * ratio) / 2;
+                const imgY = 10;
+                
+                pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+                
+                addInteractiveLinksToPdf(pdf, imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+                
+                pdf.save(`reporte-diario-${currentDate.replace(/\//g, '-')}.pdf`);
+                
+                pdfBtn.textContent = originalText;
+                pdfBtn.disabled = false;
+                
+                showPdfNotice();
+                
+            } catch (error) {
+                console.error('Error al generar PDF:', error);
+                
+                document.getElementById('pdf-btn').style.display = 'block';
+                document.getElementById('generate-btn').style.display = 'block';
+                document.getElementById('date-picker').style.display = 'block';
+                const datePickerLabel = document.querySelector('.date-selector label');
+                if (datePickerLabel) datePickerLabel.style.display = 'block';
+                document.querySelector('.tabs').style.display = 'flex';
+                document.querySelector('footer').style.display = 'block';
+                
+                const pdfTitle = document.querySelector('h2[style*="text-align: center"]');
+                if (pdfTitle) pdfTitle.remove();
+                
+                const pdfBtn = document.getElementById('pdf-btn');
+                pdfBtn.textContent = 'Exportar PDF';
+                pdfBtn.disabled = false;
+                
+                showError('Error al generar el PDF. Por favor, inténtalo de nuevo.');
+            }
+        }
+        
+        function addInteractiveLinksToPdf(pdf, imgX, imgY, imgWidth, imgHeight) {
+            const scaleX = imgWidth / document.querySelector('.container').offsetWidth;
+            const scaleY = imgHeight / document.querySelector('.container').offsetHeight;
+            
+            const links = document.querySelectorAll('a[href^="http"]');
+            links.forEach(link => {
+                const rect = link.getBoundingClientRect();
+                const containerRect = document.querySelector('.container').getBoundingClientRect();
+                
+                const x = imgX + (rect.left - containerRect.left) * scaleX;
+                const y = imgY + (rect.top - containerRect.top) * scaleY;
+                const width = rect.width * scaleX;
+                const height = rect.height * scaleY;
+                
+                if (width > 5 && height > 5) { 
+                    pdf.link(x, y, width, height, { url: link.href });
+                }
+            });
+        }
+        
+        // Event listeners
+        document.getElementById('generate-btn').addEventListener('click', () => {
+            const selectedDateInput = document.getElementById('date-picker').value;
+            if (selectedDateInput) {
+                const selectedDate = convertToSheetDateFormat(selectedDateInput);
+                processDataForDate(selectedDate);
+            }
+        });
+        
+        document.getElementById('pdf-btn').addEventListener('click', generatePDF);
+        
+        document.getElementById('weekly-btn').addEventListener('click', () => {
+            alert('La funcionalidad de reporte quincenal estará disponible próximamente.');
+        });
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            loadData();
+        });
     </script>
 </body>
-
 </html>
-
-

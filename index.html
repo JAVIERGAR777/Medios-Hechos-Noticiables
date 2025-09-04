@@ -93,6 +93,10 @@
             background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
         }
         
+        .btn-home {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        }
+        
         .tabs {
             display: flex;
             justify-content: center;
@@ -362,6 +366,14 @@
                 min-width: 120px;
                 font-size: 0.9rem;
             }
+            
+            .btn-container {
+                display: flex;
+                gap: 8px;
+                justify-content: center;
+                width: 100%;
+                margin-top: 10px;
+            }
         }
 
         .pdf-notice {
@@ -394,6 +406,11 @@
         .high-visibility-marker {
             filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.7));
         }
+        
+        .btn-container {
+            display: flex;
+            gap: 8px;
+        }
     </style>
 </head>
 <body>
@@ -408,7 +425,10 @@
                 <input type="date" id="date-picker">
                 <button class="btn" id="generate-btn">Generar</button>
             </div>
-            <button class="btn btn-pdf" id="pdf-btn">Exportar PDF</button>
+            <div class="btn-container">
+                <button class="btn btn-home" id="home-btn">Volver a Inicio</button>
+                <button class="btn btn-pdf" id="pdf-btn">Exportar PDF</button>
+            </div>
         </div>
         
         <div class="tabs">
@@ -563,7 +583,7 @@
                 console.log('Datos recibidos:', data);
                 
                 if (!Array.isArray(data)) {
-                    throw new Error('Formato de datos inesperado. Se esperaba un array.');
+                    throw new Error('Formato de datos inesperado. Se esperaba an array.');
                 }
                 
                 allEventsData = data.map(item => {
@@ -780,7 +800,6 @@
                 eventTypeContainer.appendChild(card);
             });
             
-            // Si no hay eventos, mostrar mensaje
             if (Object.keys(eventCounts).length === 0) {
                 eventTypeContainer.innerHTML = '<div class="event-type-card" style="grid-column: 1 / -1; text-align: center;">No hay eventos registrados</div>';
             }
@@ -816,6 +835,7 @@
                 
                 const pdfBtnElement = document.getElementById('pdf-btn');
                 const generateBtnElement = document.getElementById('generate-btn');
+                const homeBtnElement = document.getElementById('home-btn');
                 const datePickerElement = document.getElementById('date-picker');
                 const datePickerLabel = document.querySelector('.date-selector label');
                 const tabsElement = document.querySelector('.tabs');
@@ -823,6 +843,7 @@
                 
                 pdfBtnElement.style.display = 'none';
                 generateBtnElement.style.display = 'none';
+                homeBtnElement.style.display = 'none';
                 datePickerElement.style.display = 'none';
                 if (datePickerLabel) datePickerLabel.style.display = 'none';
                 tabsElement.style.display = 'none';
@@ -858,6 +879,7 @@
                 
                 pdfBtnElement.style.display = 'block';
                 generateBtnElement.style.display = 'block';
+                homeBtnElement.style.display = 'block';
                 datePickerElement.style.display = 'block';
                 if (datePickerLabel) datePickerLabel.style.display = 'block';
                 tabsElement.style.display = 'flex';
@@ -892,6 +914,7 @@
                 
                 document.getElementById('pdf-btn').style.display = 'block';
                 document.getElementById('generate-btn').style.display = 'block';
+                document.getElementById('home-btn').style.display = 'block';
                 document.getElementById('date-picker').style.display = 'block';
                 const datePickerLabel = document.querySelector('.date-selector label');
                 if (datePickerLabel) datePickerLabel.style.display = 'block';
@@ -929,6 +952,11 @@
             });
         }
         
+        // Función para redirigir a la página de inicio
+        function goToHomePage() {
+            window.location.href = 'https://medios-ultversion.netlify.app/';
+        }
+        
         // Event listeners
         document.getElementById('generate-btn').addEventListener('click', () => {
             const selectedDateInput = document.getElementById('date-picker').value;
@@ -939,6 +967,8 @@
         });
         
         document.getElementById('pdf-btn').addEventListener('click', generatePDF);
+        
+        document.getElementById('home-btn').addEventListener('click', goToHomePage);
         
         document.getElementById('weekly-btn').addEventListener('click', () => {
             alert('La funcionalidad de reporte quincenal estará disponible próximamente.');

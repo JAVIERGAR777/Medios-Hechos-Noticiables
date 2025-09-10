@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -892,18 +893,38 @@
             return `${hours}:${minutes}`;
         }
         
-        // Función para dibujar un logo simple en el PDF
-        function drawLogo(pdf, x, y, width, height) {
-            // Dibujar un rectángulo con el color de fondo
-            pdf.setFillColor(0, 88, 94); // #00585e
-            pdf.rect(x, y, width, height, 'F');
-            
-            // Dibujar texto dentro del logo
-            pdf.setTextColor(255, 255, 255);
-            pdf.setFontSize(10);
-            pdf.setFont(undefined, 'bold');
-            pdf.text("LOGO", x + width/2, y + height/2, { align: 'center', baseline: 'middle' });
-        }
+// Función para dibujar el logo desde una URL
+function drawLogoFromURL(pdf, x, y, width, height) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous'; // Permite carga cross-origin
+img.src = 'https://raw.githubusercontent.com/JAVIERGAR777/Medios-Hechos-Noticiables/main/image1.png';
+        
+        img.onload = function() {
+            pdf.addImage(img, 'PNG', x, y, width, height);
+            resolve();
+        };
+        
+        img.onerror = function() {
+            // Si falla la carga, dibujamos el logo por defecto
+            drawLogo(pdf, x, y, width, height);
+            resolve();
+        };
+    });
+}
+
+// Función original para dibujar un logo simple (como fallback)
+function drawLogo(pdf, x, y, width, height) {
+    // Dibujar un rectángulo con el color de fondo
+    pdf.setFillColor(0, 88, 94); // #00585e
+    pdf.rect(x, y, width, height, 'F');
+    
+    // Dibujar texto dentro del logo
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(10);
+    pdf.setFont(undefined, 'bold');
+    pdf.text("LOGO", x + width/2, y + height/2, { align: 'center', baseline: 'middle' });
+}
         
         // Función para capturar el mapa como imagen
         async function captureMap() {

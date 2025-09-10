@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte Diario</title>
+    <title>Reporte Diario de Eventos</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -212,7 +212,7 @@
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             margin-bottom: 15px;
-            height: 400px;
+            height: 500px;
             position: relative;
         }
         
@@ -358,7 +358,7 @@
             }
             
             .map-container {
-                height: 350px;
+                height: 400px;
             }
             
             .btn-link {
@@ -402,7 +402,6 @@
             to { opacity: 0; transform: translateY(-15px); }
         }
 
-        /* Estilos para mejorar la visualización de los puntos en el PDF */
         .high-visibility-marker {
             filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.7));
         }
@@ -410,6 +409,34 @@
         .btn-container {
             display: flex;
             gap: 8px;
+        }
+
+        .map-number-label {
+            position: absolute;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8), 
+                         -1px -1px 3px rgba(0, 0, 0, 0.8),
+                         1px -1px 3px rgba(0, 0, 0, 0.8),
+                         -1px 1px 3px rgba(0, 0, 0, 0.8);
+            font-size: 14px;
+            font-weight: 900;
+            pointer-events: none;
+            z-index: 1000;
+            transform: translate(-50%, -50%);
+        }
+        
+        .custom-marker {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 24px;
+            height: 24px;
+            border: 2px solid #000;
+            border-radius: 50%;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px #000;
         }
     </style>
 </head>
@@ -489,12 +516,15 @@
             <table>
                 <thead>
                     <tr>
+                        <th>Nº</th>
                         <th>Fecha</th>
                         <th>Tipología</th>
                         <th>Momento</th>
                         <th>Entorno</th>
                         <th>Descripción</th>
                         <th>Víctimas</th>
+                        <th>Medio</th>
+                        <th>Cobertura</th>
                         <th>Enlace</th>
                     </tr>
                 </thead>
@@ -518,7 +548,7 @@
         // URL de la API de Sheetbest
         const SHEETBEST_URL = 'https://api.sheetbest.com/sheets/63d0e8d5-5d04-468f-baea-a951c8d5c55a';
         
-        // Colores para los diferentes tipos de eventos (más contrastados)
+        // Colores para los diferentes tipos de eventos
         const eventColors = {
             "Entradera": "#e74c3c",
             "Robo de Pertenencias": "#3498db",
@@ -532,6 +562,7 @@
         let allEventsData = [];
         let currentDate = '';
         let mapMarkers = [];
+        let filteredEvents = [];
         
         // Inicializar el mapa
         function initMap() {
@@ -583,7 +614,7 @@
                 console.log('Datos recibidos:', data);
                 
                 if (!Array.isArray(data)) {
-                    throw new Error('Formato de datos inesperado. Se esperaba an array.');
+                    throw new Error('Formato de datos inesperado. Se esperaba un array.');
                 }
                 
                 allEventsData = data.map(item => {
@@ -595,7 +626,10 @@
                         entorno: item['Entorno en que ocurre el evento'] || '',
                         descripcion: item['Breve Descripción del Evento'] || '',
                         victimas: item['Cantidad de Victimas ( solo indicar en número)'] || 0,
-                        enlace: item['Link de Nota'] || ''
+                        enlace: item['Link de Nota'] || '',
+                        titulo: item['Titulo del Evento'] || 'Sin título', // Corregido: sin acento
+                        medio: item['Medio'] || 'Medio no especificado',
+                        cobertura: item['Número de medios que cubrieron la noticia'] || '1'
                     };
                 }).filter(item => item.fecha); 
                 
@@ -667,7 +701,7 @@
             currentDate = dateStr;
             console.log('Procesando datos para fecha:', dateStr);
             
-            const filteredEvents = allEventsData.filter(event => {
+            filteredEvents = allEventsData.filter(event => {
                 return event.fecha === dateStr;
             });
             
@@ -691,7 +725,7 @@
             let hasValidCoordinates = false;
             mapMarkers = [];
             
-            filteredEvents.forEach(event => {
+            filteredEvents.forEach((event, index) => {
                 if (event.coordenadas) {
                     try {
                         const coords = event.coordenadas.split(',').map(coord => {
@@ -703,23 +737,34 @@
                             const eventType = event.tipologia || 'Desconocido';
                             const color = eventColors[eventType] || '#7f8c8d';
                             
-                            const marker = L.circleMarker([lat, lng], {
-                                color: '#000',
-                                weight: 2,
-                                fillColor: color,
-                                fillOpacity: 0.9,
-                                radius: 12,
-                                className: 'high-visibility-marker'
-                            }).addTo(map);
+                            // Crear marcador personalizado con número integrado
+                            const markerHtml = `
+                                <div class="custom-marker" style="background-color: ${color};">
+                                    ${index + 1}
+                                </div>
+                            `;
                             
+                            const icon = L.divIcon({
+                                className: 'custom-marker-container',
+                                html: markerHtml,
+                                iconSize: [24, 24],
+                                iconAnchor: [12, 12]
+                            });
+                            
+                            const marker = L.marker([lat, lng], {icon: icon}).addTo(map);
+                            
+                            // Popup mejorado
                             marker.bindPopup(`
                                 <div style="max-width: 250px; font-size: 0.9rem;">
                                     <strong style="color: ${color}; font-size: 1.1rem;">${eventType}</strong><br>
+                                    <strong>#${index + 1}:</strong> ${event.titulo || 'Sin título'}<br>
                                     <strong>Fecha:</strong> ${event.fecha}<br>
                                     <strong>Momento:</strong> ${event.momento}<br>
                                     <strong>Entorno:</strong> ${event.entorno}<br>
                                     <strong>Descripción:</strong> ${event.descripcion || 'Sin descripción'}<br>
                                     <strong>Víctimas:</strong> ${parseVictimCount(event.victimas)}<br>
+                                    <strong>Medio:</strong> ${event.medio || 'Medio no especificado'}<br>
+                                    <strong>Cobertura:</strong> ${event.cobertura || '1'} medio(s)<br>
                                     ${event.enlace ? `<a href="${event.enlace}" target="_blank" class="btn-link">Ver noticia</a>` : ''}
                                 </div>
                             `);
@@ -747,19 +792,22 @@
             
             if (filteredEvents.length === 0) {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td colspan="7" style="text-align: center;">No hay eventos para esta fecha</td>`;
+                row.innerHTML = `<td colspan="10" style="text-align: center;">No hay eventos para esta fecha</td>`;
                 tableBody.appendChild(row);
             } else {
-                filteredEvents.forEach(event => {
+                filteredEvents.forEach((event, index) => {
                     const row = document.createElement('tr');
                     
                     row.innerHTML = `
+                        <td><strong>${index + 1}</strong></td>
                         <td>${event.fecha || ''}</td>
                         <td>${event.tipologia || ''}</td>
                         <td>${event.momento || ''}</td>
                         <td>${event.entorno || ''}</td>
                         <td>${event.descripcion || ''}</td>
                         <td>${parseVictimCount(event.victimas)}</td>
+                        <td>${event.medio || ''}</td>
+                        <td>${event.cobertura || '1'}</td>
                         <td>${event.enlace ? `<a href="${event.enlace}" target="_blank" class="btn-link">Ver noticia</a>` : 'N/A'}</td>
                     `;
                     
@@ -818,6 +866,64 @@
             return isNaN(parsed) ? 0 : parsed;
         }
         
+        // Función para formatear la fecha en español
+        function formatDateToSpanish(dateStr) {
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                const day = parseInt(parts[0]);
+                const month = parseInt(parts[1]);
+                const year = parts[2];
+                
+                const monthNames = [
+                    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+                    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+                ];
+                
+                return `${day} de ${monthNames[month - 1]} de ${year}`;
+            }
+            return dateStr;
+        }
+        
+        // Función para obtener la hora actual formateada
+        function getCurrentTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+        
+        // Función para dibujar un logo simple en el PDF
+        function drawLogo(pdf, x, y, width, height) {
+            // Dibujar un rectángulo con el color de fondo
+            pdf.setFillColor(0, 88, 94); // #00585e
+            pdf.rect(x, y, width, height, 'F');
+            
+            // Dibujar texto dentro del logo
+            pdf.setTextColor(255, 255, 255);
+            pdf.setFontSize(10);
+            pdf.setFont(undefined, 'bold');
+            pdf.text("LOGO", x + width/2, y + height/2, { align: 'center', baseline: 'middle' });
+        }
+        
+        // Función para capturar el mapa como imagen
+        async function captureMap() {
+            try {
+                const mapContainer = document.getElementById('map');
+                const canvas = await html2canvas(mapContainer, {
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: null,
+                    scale: 2, // Mayor calidad para el PDF
+                    logging: false
+                });
+                
+                return canvas.toDataURL('image/png', 1.0); // Máxima calidad
+            } catch (error) {
+                console.error('Error capturando el mapa:', error);
+                return null;
+            }
+        }
+        
         async function generatePDF() {
             try {
                 const pdfBtn = document.getElementById('pdf-btn');
@@ -825,84 +931,213 @@
                 pdfBtn.textContent = 'Generando...';
                 pdfBtn.disabled = true;
                 
-                if (mapMarkers.length > 0) {
-                    const markerGroup = new L.featureGroup(mapMarkers);
-                    const bounds = markerGroup.getBounds();
-                    map.fitBounds(bounds, { padding: [70, 70] });
-                    
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
+                // Obtener eventos para la fecha actual
+                const eventsForDate = allEventsData.filter(event => event.fecha === currentDate);
                 
-                const pdfBtnElement = document.getElementById('pdf-btn');
-                const generateBtnElement = document.getElementById('generate-btn');
-                const homeBtnElement = document.getElementById('home-btn');
-                const datePickerElement = document.getElementById('date-picker');
-                const datePickerLabel = document.querySelector('.date-selector label');
-                const tabsElement = document.querySelector('.tabs');
-                const footerElement = document.querySelector('footer');
-                
-                pdfBtnElement.style.display = 'none';
-                generateBtnElement.style.display = 'none';
-                homeBtnElement.style.display = 'none';
-                datePickerElement.style.display = 'none';
-                if (datePickerLabel) datePickerLabel.style.display = 'none';
-                tabsElement.style.display = 'none';
-                footerElement.style.display = 'none';
-                
-                const pdfTitle = document.createElement('h2');
-                pdfTitle.textContent = `Reporte Diario - ${currentDate}`;
-                pdfTitle.style.textAlign = 'center';
-                pdfTitle.style.marginBottom = '15px';
-                pdfTitle.style.color = '#1e293b';
-                pdfTitle.style.fontSize = '1.3rem';
-                pdfTitle.style.fontWeight = '700';
-                
-                const controlsContainer = document.querySelector('.controls-container');
-                controlsContainer.parentNode.insertBefore(pdfTitle, controlsContainer);
-                
-                const element = document.querySelector('.container');
-                
-                const canvas = await html2canvas(element, {
-                    scale: 2, 
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff',
-                    onclone: function(clonedDoc) {
-                        const links = clonedDoc.querySelectorAll('a');
-                        links.forEach(link => {
-                            link.style.color = 'white';
-                            link.style.textDecoration = 'none';
-                            link.setAttribute('target', '_blank');
-                        });
-                    }
-                });
-                
-                pdfBtnElement.style.display = 'block';
-                generateBtnElement.style.display = 'block';
-                homeBtnElement.style.display = 'block';
-                datePickerElement.style.display = 'block';
-                if (datePickerLabel) datePickerLabel.style.display = 'block';
-                tabsElement.style.display = 'flex';
-                footerElement.style.display = 'block';
-                
-                pdfTitle.remove();
+                // Capturar el mapa como imagen
+                const mapImage = await captureMap();
                 
                 const { jsPDF } = window.jspdf;
-                const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-                const imgWidth = canvas.width;
-                const imgHeight = canvas.height;
-                const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-                const imgX = (pdfWidth - imgWidth * ratio) / 2;
-                const imgY = 10;
+                const pdf = new jsPDF();
                 
-                pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+                // Configurar estilos
+                const titleFontSize = 16;
+                const headerFontSize = 14;
+                const normalFontSize = 12;
+                const smallFontSize = 10;
                 
-                addInteractiveLinksToPdf(pdf, imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+                // Dibujar logo en lugar de usar una imagen
+                drawLogo(pdf, 15, 15, 30, 18);
                 
-                pdf.save(`reporte-diario-${currentDate.replace(/\//g, '-')}.pdf`);
+                // Línea delgada azul superior
+                pdf.setDrawColor(0, 174, 195); // #00aec3
+                pdf.setLineWidth(0.5);
+                pdf.line(15, 35, 195, 35);
+                
+                // Títulos - ALINEADOS A LA IZQUIERDA
+                pdf.setFontSize(headerFontSize);
+                pdf.setFont(undefined, 'bold');
+                pdf.setTextColor(0, 174, 195); // #00aec3 (color celeste)
+                pdf.text("SECRETARÍA DE SEGURIDAD", 15, 42);
+                
+                pdf.setFontSize(18);
+                pdf.setTextColor(0, 88, 94); // #00585e (color verde oscuro)
+                // Dividir "RELEVAMIENTO DE MEDIOS" en dos líneas
+                pdf.text("RELEVAMIENTO DE", 15, 50);
+                pdf.text("MEDIOS", 15, 58);
+                
+                // Segunda línea delgada azul inferior
+                pdf.setDrawColor(0, 174, 195); // #00aec3
+                pdf.line(15, 62, 195, 62);
+                
+                // Fechas y horas
+                pdf.setFontSize(normalFontSize);
+                pdf.setFont(undefined, 'normal');
+                pdf.setTextColor(0, 0, 0);
+                const formattedDate = formatDateToSpanish(currentDate);
+                const currentTime = getCurrentTime();
+                
+                pdf.text(`DESDE: ${formattedDate} ${currentTime}`, 20, 75);
+                pdf.text(`HASTA: ${formattedDate} ${currentTime}`, 20, 85);
+                
+                // Hechos registrados
+                pdf.setFont(undefined, 'bold');
+                pdf.text(`HECHOS REGISTRADOS: ${eventsForDate.length}`, 20, 100);
+                pdf.text(`NOTICIAS TOTALES: ${eventsForDate.length}`, 20, 110);
+                
+                // Espacio antes de los detalles
+                let yPosition = 125;
+                
+                // Detalles de cada noticia
+                pdf.setFontSize(headerFontSize);
+                pdf.setFont(undefined, 'bold');
+                
+                // Primero procesamos todas las noticias
+                eventsForDate.forEach((event, index) => {
+                    // Comprobar si necesitamos una nueva página (dejamos más margen)
+                    if (yPosition > 240) {
+                        pdf.addPage();
+                        yPosition = 20;
+                    }
+                    
+                    // Número de noticia
+                    pdf.text(`#${index + 1}`, 20, yPosition);
+                    yPosition += 7;
+                    
+                    // Resumen
+                    pdf.setFontSize(normalFontSize);
+                    pdf.setFont(undefined, 'normal');
+                    const descripcion = event.descripcion || 'Sin descripción';
+                    const splitDesc = pdf.splitTextToSize(`Resumen: ${descripcion}`, 170);
+                    
+                    // Verificar si hay espacio suficiente para el resumen
+                    const espacioNecesario = splitDesc.length * 6 + 5;
+                    if (yPosition + espacioNecesario > 270) {
+                        pdf.addPage();
+                        yPosition = 20;
+                        pdf.setFontSize(headerFontSize);
+                        pdf.setFont(undefined, 'bold');
+                        pdf.text(`#${index + 1}`, 20, yPosition);
+                        yPosition += 7;
+                        pdf.setFontSize(normalFontSize);
+                        pdf.setFont(undefined, 'normal');
+                    }
+                    
+                    pdf.text(splitDesc, 20, yPosition);
+                    yPosition += espacioNecesario;
+                    
+                    // Título
+                    const titulo = event.titulo || 'Sin título';
+                    const splitTitulo = pdf.splitTextToSize(`Título: ${titulo}`, 170);
+                    
+                    // Verificar espacio para el título
+                    if (yPosition + 15 > 270) {
+                        pdf.addPage();
+                        yPosition = 20;
+                    }
+                    
+                    pdf.text(splitTitulo, 20, yPosition);
+                    yPosition += splitTitulo.length * 6 + 2;
+                    
+                    // Medio
+                    const medio = event.medio || 'Medio no especificado';
+                    const splitMedio = pdf.splitTextToSize(`Medio: ${medio}`, 170);
+                    
+                    // Verificar espacio para el medio
+                    if (yPosition + 15 > 270) {
+                        pdf.addPage();
+                        yPosition = 20;
+                    }
+                    
+                    pdf.text(splitMedio, 20, yPosition);
+                    yPosition += splitMedio.length * 6 + 2;
+                    
+                    // Cobertura (número de medios que cubrieron la noticia)
+                    const cobertura = event.cobertura || '1';
+                    
+                    // Verificar espacio para la cobertura
+                    if (yPosition + 10 > 270) {
+                        pdf.addPage();
+                        yPosition = 20;
+                    }
+                    
+                    pdf.text(`Cobertura: ${cobertura} medio(s)`, 20, yPosition);
+                    yPosition += 7;
+                    
+                    // Link (azul y subrayado)
+                    pdf.setTextColor(0, 0, 255);
+                    
+                    // Verificar espacio para el link
+                    if (yPosition + 10 > 270) {
+                        pdf.addPage();
+                        yPosition = 20;
+                    }
+                    
+                    pdf.textWithLink('Link: Ver noticia', 20, yPosition, { url: event.enlace });
+                    pdf.setTextColor(0, 0, 0);
+                    yPosition += 10;
+                    
+                    // Espacio entre noticias
+                    yPosition += 5;
+                    
+                    // Volver a establecer estilo de título para la próxima noticia
+                    pdf.setFontSize(headerFontSize);
+                    pdf.setFont(undefined, 'bold');
+                });
+                
+                // Agregar el mapa al final del PDF si está disponible
+                if (mapImage) {
+                    pdf.addPage();
+                    pdf.setFontSize(headerFontSize);
+                    pdf.setFont(undefined, 'bold');
+                    pdf.text("MAPA DE EVENTOS - REFERENCIA NUMERADA", 105, 15, { align: 'center' });
+                    
+                    // Agregar la imagen del mapa (más grande y centrada)
+                    pdf.addImage(mapImage, 'PNG', 10, 25, 190, 140);
+                    
+                    // Agregar leyenda
+                    pdf.setFontSize(normalFontSize);
+                    pdf.setFont(undefined, 'normal');
+                    pdf.text("Leyenda:", 15, 170);
+                    
+                    let legendY = 180;
+                    Object.entries(eventColors).forEach(([eventType, color]) => {
+                        pdf.setFillColor(parseInt(color.substring(1, 3), 16), 
+                                        parseInt(color.substring(3, 5), 16), 
+                                        parseInt(color.substring(5, 7), 16));
+                        pdf.rect(15, legendY, 5, 5, 'F');
+                        pdf.text(eventType, 22, legendY + 4);
+                        legendY += 8;
+                    });
+                    
+                    pdf.setFont(undefined, 'bold');
+                    pdf.text("Referencia numérica:", 15, legendY + 10);
+                    pdf.setFont(undefined, 'normal');
+                    
+                    let refY = legendY + 20;
+                    const eventsPerColumn = 10;
+                    const columnWidth = 85;
+                    
+                    eventsForDate.forEach((event, index) => {
+                        if (event.coordenadas) {
+                            const column = Math.floor(index / eventsPerColumn);
+                            const xPosition = 15 + (column * columnWidth);
+                            
+                            if (refY > 270 && column === 0) {
+                                // crea una nueva columna en el caso de quedarnos sin espacio
+                                refY = legendY + 20;
+                            }
+                            
+                            if (refY <= 270) {
+                                pdf.text(`#${index + 1}: ${event.tipologia || 'Sin tipología'}`, xPosition, refY);
+                                refY += 7;
+                            }
+                        }
+                    });
+                }
+                
+                // p.  Guardar el PDF
+                pdf.save(`relevamiento-medios-${currentDate.replace(/\//g, '-')}.pdf`);
                 
                 pdfBtn.textContent = originalText;
                 pdfBtn.disabled = false;
@@ -912,18 +1147,6 @@
             } catch (error) {
                 console.error('Error al generar PDF:', error);
                 
-                document.getElementById('pdf-btn').style.display = 'block';
-                document.getElementById('generate-btn').style.display = 'block';
-                document.getElementById('home-btn').style.display = 'block';
-                document.getElementById('date-picker').style.display = 'block';
-                const datePickerLabel = document.querySelector('.date-selector label');
-                if (datePickerLabel) datePickerLabel.style.display = 'block';
-                document.querySelector('.tabs').style.display = 'flex';
-                document.querySelector('footer').style.display = 'block';
-                
-                const pdfTitle = document.querySelector('h2[style*="text-align: center"]');
-                if (pdfTitle) pdfTitle.remove();
-                
                 const pdfBtn = document.getElementById('pdf-btn');
                 pdfBtn.textContent = 'Exportar PDF';
                 pdfBtn.disabled = false;
@@ -932,32 +1155,11 @@
             }
         }
         
-        function addInteractiveLinksToPdf(pdf, imgX, imgY, imgWidth, imgHeight) {
-            const scaleX = imgWidth / document.querySelector('.container').offsetWidth;
-            const scaleY = imgHeight / document.querySelector('.container').offsetHeight;
-            
-            const links = document.querySelectorAll('a[href^="http"]');
-            links.forEach(link => {
-                const rect = link.getBoundingClientRect();
-                const containerRect = document.querySelector('.container').getBoundingClientRect();
-                
-                const x = imgX + (rect.left - containerRect.left) * scaleX;
-                const y = imgY + (rect.top - containerRect.top) * scaleY;
-                const width = rect.width * scaleX;
-                const height = rect.height * scaleY;
-                
-                if (width > 5 && height > 5) { 
-                    pdf.link(x, y, width, height, { url: link.href });
-                }
-            });
-        }
-        
         // Función para redirigir a la página de inicio
         function goToHomePage() {
             window.location.href = 'https://medios-ultversion.netlify.app/';
         }
         
-        // Event listeners
         document.getElementById('generate-btn').addEventListener('click', () => {
             const selectedDateInput = document.getElementById('date-picker').value;
             if (selectedDateInput) {

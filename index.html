@@ -895,21 +895,28 @@
         
 // Función para dibujar el logo desde una URL
 function drawLogoFromURL(pdf, x, y, width, height) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = 'Anonymous'; // Permite carga cross-origin
-img.src = 'https://raw.githubusercontent.com/JAVIERGAR777/Medios-Hechos-Noticiables/main/image1.png';
+        img.src = 'https://raw.githubusercontent.com/JAVIERGAR777/Medios-Hechos-Noticiables/main/image1.png';
         
         img.onload = function() {
-            pdf.addImage(img, 'PNG', x, y, width, height);
-            resolve();
+            try {
+                pdf.addImage(img, 'PNG', x, y, width, height);
+                resolve();
+            } catch (error) {
+                reject(error);
+            }
         };
         
         img.onerror = function() {
-            // Si falla la carga, dibujamos el logo por defecto
-            drawLogo(pdf, x, y, width, height);
-            resolve();
+            reject(new Error('Error al cargar la imagen'));
         };
+        
+        // Timeout para evitar que se quede colgado
+        setTimeout(() => {
+            reject(new Error('Timeout al cargar la imagen'));
+        }, 5000);
     });
 }
 
@@ -945,30 +952,45 @@ function drawLogo(pdf, x, y, width, height) {
             }
         }
         
-        async function generatePDF() {
-            try {
-                const pdfBtn = document.getElementById('pdf-btn');
-                const originalText = pdfBtn.textContent;
-                pdfBtn.textContent = 'Generando...';
-                pdfBtn.disabled = true;
+async function generatePDF() {
+    try {
+        const pdfBtn = document.getElementById('pdf-btn');
+        const originalText = pdfBtn.textContent;
+        pdfBtn.textContent = 'Generando...';
+        pdfBtn.disabled = true;
+        
+        // Obtener eventos para la fecha actual
+        const eventsForDate = allEventsData.filter(event => event.fecha === currentDate);
+        
+        // Capturar el mapa como imagen
+        const mapImage = await captureMap();
+        
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        
+        // Configurar estilos
+        const titleFontSize = 16;
+        const headerFontSize = 14;
+        const normalFontSize = 12;
+        const smallFontSize = 10;
+        
+        // Dibujar logo desde URL o usar fallback
+        try {
+            await drawLogoFromURL(pdf, 15, 15, 30, 18);
+        } catch (e) {
+            console.error('Error cargando logo:', e);
+            drawLogo(pdf, 15, 15, 30, 18); // Fallback por si hay error
+        }
+        
+        // ... el resto del código permanece igual
                 
-                // Obtener eventos para la fecha actual
-                const eventsForDate = allEventsData.filter(event => event.fecha === currentDate);
-                
-                // Capturar el mapa como imagen
-                const mapImage = await captureMap();
-                
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF();
-                
-                // Configurar estilos
-                const titleFontSize = 16;
-                const headerFontSize = 14;
-                const normalFontSize = 12;
-                const smallFontSize = 10;
-                
-                // Dibujar logo en lugar de usar una imagen
-                drawLogo(pdf, 15, 15, 30, 18);
+// Dibujar logo desde URL o usar fallback
+try {
+    await drawLogoFromURL(pdf, 15, 15, 30, 18);
+} catch (e) {
+    console.error('Error cargando logo:', e);
+    drawLogo(pdf, 15, 15, 30, 18); // Fallback por si hay error
+}
                 
                 // Línea delgada azul superior
                 pdf.setDrawColor(0, 174, 195); // #00aec3

@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -622,14 +623,14 @@
                 allEventsData = data.map(item => {
                     return {
                         coordenadas: item['Pegar Coordenadas'] || '',
-                        fecha: item['Fecha'] || '',
+                        fecha: item['Fecha de la Noticia'] || '',
                         tipologia: item['Tipología del Evento'] || '',
                         momento: item['Momento del Dia del Hecho'] || '',
                         entorno: item['Entorno en que ocurre el evento'] || '',
-                        descripcion: item['Breve Descripción del Evento'] || '',
+                        descripcion: item['Breve Descripción de la Noticia'] || '',
                         victimas: item['Cantidad de Victimas ( solo indicar en número)'] || 0,
                         enlace: item['Link de Nota'] || '',
-                        titulo: item['Titulo del Evento'] || 'Sin título', // Corregido: sin acento
+                        titulo: item['Titulo de la Noticia'] || 'Sin título', // Corregido: sin acento
                         medio: item['Medio'] || 'Medio no especificado',
                         cobertura: item['Número de medios que cubrieron la noticia'] || '1'
                     };
@@ -1215,7 +1216,7 @@ try {
             }
         }
         
-        // Función para redirigir a la página de inicio
+        // Función para ir a la página de inicio
         function goToHomePage() {
             window.location.href = 'https://medios-ultversion.netlify.app/';
         }

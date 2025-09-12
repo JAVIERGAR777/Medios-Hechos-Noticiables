@@ -987,10 +987,10 @@ async function generatePDF() {
         const pdf = new jsPDF();
         
         // Configurar estilos
-        const titleFontSize = 16;
-        const headerFontSize = 14;
-        const normalFontSize = 12;
-        const smallFontSize = 10;
+        const titleFontSize = 19;
+        const headerFontSize = 16;
+        const normalFontSize = 15;
+        const smallFontSize = 13;
         
         // Dibujar logo desde URL o usar fallback
         try {
@@ -1010,7 +1010,6 @@ try {
     drawLogo(pdf, 15, 15, 30, 18); // Fallback por si hay error
 }
                 
-                // Línea delgada azul superior
                 pdf.setDrawColor(0, 174, 195); // #00aec3
                 pdf.setLineWidth(0.5);
                 pdf.line(15, 35, 195, 35);
@@ -1023,7 +1022,6 @@ try {
                 
                 pdf.setFontSize(18);
                 pdf.setTextColor(0, 88, 94); // #00585e (color verde oscuro)
-                // Dividir "RELEVAMIENTO DE MEDIOS" en dos líneas
                 pdf.text("RELEVAMIENTO DE", 15, 50);
                 pdf.text("MEDIOS", 15, 58);
                 

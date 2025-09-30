@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -510,6 +511,14 @@
                     <div class="legend-color" style="background-color: #4caf50;"></div>
                     <span>Escruche</span>
                 </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #4c90af;"></div>
+                    <span>Escruche en edificio</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #4d460f;"></div>
+                    <span>Robo en comercio</span>
+                </div>                                
             </div>
         </div>
         
@@ -557,7 +566,9 @@
             "Robo en Vía Publica": "#e61f1f",
             "Robo Vehícular": "#ff9800",
             "Estafa": "#9c27b0",
-            "Escruche": "#4caf50"
+            "Escruche": "#4caf50",
+            "Escruche en edificio":"#4c90af",
+            "Robo en comercio": "#4d460f"
         };
 
         // Variables globales
@@ -577,30 +588,25 @@
             }).addTo(map);
         }
         
-        // Mostrar mensaje de error
         function showError(message) {
             const errorElement = document.getElementById('error-message');
             errorElement.textContent = message;
             errorElement.style.display = 'block';
         }
         
-        // Ocultar mensaje de error
         function hideError() {
             document.getElementById('error-message').style.display = 'none';
         }
         
-        // Mostrar notificación de PDF
         function showPdfNotice() {
             const notice = document.getElementById('pdf-notice');
             notice.style.display = 'block';
             
-            // Ocultar después de 3 segundos
             setTimeout(() => {
                 notice.style.display = 'none';
             }, 3000);
         }
         
-        // Cargar datos desde Sheetbest
         async function loadData() {
             try {
                 document.getElementById('loading-indicator').style.display = 'block';
@@ -638,18 +644,15 @@
                 
                 console.log('Datos procesados:', allEventsData);
                 
-// Establecer fecha actual por defecto
 const today = new Date();
 const todayFormatted = today.toISOString().split('T')[0];
 document.getElementById('date-picker').value = todayFormatted;
 
 if (allEventsData.length > 0) {
     const latestDate = findLatestDate(allEventsData);
-    // Si tenemos datos, usar la fecha más reciente
     document.getElementById('date-picker').value = convertToInputDateFormat(latestDate);
     processDataForDate(latestDate);
 } else {
-    // Si no hay datos, procesar con fecha actual
     const currentDateFormatted = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
     processDataForDate(currentDateFormatted);
 }
@@ -756,7 +759,6 @@ function getCurrentDateFormatted() {
                             const eventType = event.tipologia || 'Desconocido';
                             const color = eventColors[eventType] || '#7f8c8d';
                             
-                            // Crear marcador personalizado con número integrado
                             const markerHtml = `
                                 <div class="custom-marker" style="background-color: ${color};">
                                     ${index + 1}
@@ -772,7 +774,6 @@ function getCurrentDateFormatted() {
                             
                             const marker = L.marker([lat, lng], {icon: icon}).addTo(map);
                             
-                            // Popup mejorado
                             marker.bindPopup(`
                                 <div style="max-width: 250px; font-size: 0.9rem;">
                                     <strong style="color: ${color}; font-size: 1.1rem;">${eventType}</strong><br>
@@ -885,7 +886,6 @@ function getCurrentDateFormatted() {
             return isNaN(parsed) ? 0 : parsed;
         }
         
-        // Función para formatear la fecha en español
         function formatDateToSpanish(dateStr) {
             const parts = dateStr.split('/');
             if (parts.length === 3) {
@@ -911,11 +911,10 @@ function getCurrentDateFormatted() {
             return `${hours}:${minutes}`;
         }
         
-// Función para dibujar el logo desde una URL
 function drawLogoFromURL(pdf, x, y, width, height) {
     return new Promise((resolve, reject) => {
         const img = new Image();
-        img.crossOrigin = 'Anonymous'; // Permite carga cross-origin
+        img.crossOrigin = 'Anonymous'; 
         img.src = 'https://raw.githubusercontent.com/JAVIERGAR777/Medios-Hechos-Noticiables/main/image1.png';
         
         img.onload = function() {
@@ -931,16 +930,13 @@ function drawLogoFromURL(pdf, x, y, width, height) {
             reject(new Error('Error al cargar la imagen'));
         };
         
-        // Timeout para evitar que se quede colgado
         setTimeout(() => {
             reject(new Error('Timeout al cargar la imagen'));
         }, 5000);
     });
 }
 
-// Función original para dibujar un logo simple (como fallback)
 function drawLogo(pdf, x, y, width, height) {
-    // Dibujar un rectángulo con el color de fondo
     pdf.setFillColor(0, 88, 94); // #00585e
     pdf.rect(x, y, width, height, 'F');
     
@@ -951,7 +947,6 @@ function drawLogo(pdf, x, y, width, height) {
     pdf.text("LOGO", x + width/2, y + height/2, { align: 'center', baseline: 'middle' });
 }
         
-        // Función para capturar el mapa como imagen
         async function captureMap() {
             try {
                 const mapContainer = document.getElementById('map');
@@ -959,7 +954,7 @@ function drawLogo(pdf, x, y, width, height) {
                     useCORS: true,
                     allowTaint: true,
                     backgroundColor: null,
-                    scale: 2, // Mayor calidad para el PDF
+                    scale: 2, 
                     logging: false
                 });
                 
@@ -977,22 +972,18 @@ async function generatePDF() {
         pdfBtn.textContent = 'Generando...';
         pdfBtn.disabled = true;
         
-        // Obtener eventos para la fecha actual
         const eventsForDate = allEventsData.filter(event => event.fecha === currentDate);
         
-        // Capturar el mapa como imagen
         const mapImage = await captureMap();
         
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF();
         
-        // Configurar estilos
         const titleFontSize = 19;
         const headerFontSize = 16;
         const normalFontSize = 15;
         const smallFontSize = 13;
         
-        // Dibujar logo desde URL o usar fallback
         try {
             await drawLogoFromURL(pdf, 15, 15, 30, 18);
         } catch (e) {
@@ -1000,9 +991,7 @@ async function generatePDF() {
             drawLogo(pdf, 15, 15, 30, 18); // Fallback por si hay error
         }
         
-        // ... el resto del código permanece igual
                 
-// Dibujar logo desde URL o usar fallback
 try {
     await drawLogoFromURL(pdf, 15, 15, 30, 18);
 } catch (e) {
@@ -1029,7 +1018,6 @@ try {
                 pdf.setDrawColor(0, 174, 195); // #00aec3
                 pdf.line(15, 62, 195, 62);
                 
-                // Fechas y horas
                 pdf.setFontSize(normalFontSize);
                 pdf.setFont(undefined, 'normal');
                 pdf.setTextColor(0, 0, 0);
@@ -1039,27 +1027,22 @@ try {
                 pdf.text(`DESDE: ${formattedDate} ${currentTime}`, 20, 75);
                 pdf.text(`HASTA: ${formattedDate} ${currentTime}`, 20, 85);
                 
-                // Hechos registrados
                 pdf.setFont(undefined, 'bold');
                 pdf.text(`HECHOS REGISTRADOS: ${eventsForDate.length}`, 20, 100);
                 pdf.text(`NOTICIAS TOTALES: ${eventsForDate.length}`, 20, 110);
                 
-                // Espacio antes de los detalles
                 let yPosition = 125;
                 
                 // Detalles de cada noticia
                 pdf.setFontSize(headerFontSize);
                 pdf.setFont(undefined, 'bold');
                 
-                // Primero procesamos todas las noticias
                 eventsForDate.forEach((event, index) => {
-                    // Comprobar si necesitamos una nueva página (dejamos más margen)
                     if (yPosition > 240) {
                         pdf.addPage();
                         yPosition = 20;
                     }
                     
-                    // Número de noticia
                     pdf.text(`#${index + 1}`, 20, yPosition);
                     yPosition += 7;
                     
@@ -1069,7 +1052,6 @@ try {
                     const descripcion = event.descripcion || 'Sin descripción';
                     const splitDesc = pdf.splitTextToSize(`Resumen: ${descripcion}`, 170);
                     
-                    // Verificar si hay espacio suficiente para el resumen
                     const espacioNecesario = splitDesc.length * 6 + 5;
                     if (yPosition + espacioNecesario > 270) {
                         pdf.addPage();
@@ -1085,11 +1067,9 @@ try {
                     pdf.text(splitDesc, 20, yPosition);
                     yPosition += espacioNecesario;
                     
-                    // Título
                     const titulo = event.titulo || 'Sin título';
                     const splitTitulo = pdf.splitTextToSize(`Título: ${titulo}`, 170);
                     
-                    // Verificar espacio para el título
                     if (yPosition + 15 > 270) {
                         pdf.addPage();
                         yPosition = 20;
@@ -1098,11 +1078,9 @@ try {
                     pdf.text(splitTitulo, 20, yPosition);
                     yPosition += splitTitulo.length * 6 + 2;
                     
-                    // Medio
                     const medio = event.medio || 'Medio no especificado';
                     const splitMedio = pdf.splitTextToSize(`Medio: ${medio}`, 170);
                     
-                    // Verificar espacio para el medio
                     if (yPosition + 15 > 270) {
                         pdf.addPage();
                         yPosition = 20;
@@ -1111,10 +1089,8 @@ try {
                     pdf.text(splitMedio, 20, yPosition);
                     yPosition += splitMedio.length * 6 + 2;
                     
-                    // Cobertura (número de medios que cubrieron la noticia)
                     const cobertura = event.cobertura || '1';
                     
-                    // Verificar espacio para la cobertura
                     if (yPosition + 10 > 270) {
                         pdf.addPage();
                         yPosition = 20;
@@ -1139,22 +1115,18 @@ try {
                     // Espacio entre noticias
                     yPosition += 5;
                     
-                    // Volver a establecer estilo de título para la próxima noticia
                     pdf.setFontSize(headerFontSize);
                     pdf.setFont(undefined, 'bold');
                 });
                 
-                // Agregar el mapa al final del PDF si está disponible
                 if (mapImage) {
                     pdf.addPage();
                     pdf.setFontSize(headerFontSize);
                     pdf.setFont(undefined, 'bold');
                     pdf.text("MAPA DE EVENTOS - REFERENCIA NUMERADA", 105, 15, { align: 'center' });
                     
-                    // Agregar la imagen del mapa (más grande y centrada)
                     pdf.addImage(mapImage, 'PNG', 10, 25, 190, 140);
                     
-                    // Agregar leyenda
                     pdf.setFontSize(normalFontSize);
                     pdf.setFont(undefined, 'normal');
                     pdf.text("Leyenda:", 15, 170);
@@ -1183,7 +1155,6 @@ try {
                             const xPosition = 15 + (column * columnWidth);
                             
                             if (refY > 270 && column === 0) {
-                                // crea una nueva columna en el caso de quedarnos sin espacio
                                 refY = legendY + 20;
                             }
                             
@@ -1214,7 +1185,6 @@ try {
             }
         }
         
-        // Función para ir a la página de inicio
         function goToHomePage() {
             window.location.href = 'https://medios-ultversion.netlify.app/';
         }
@@ -1242,5 +1212,4 @@ try {
     </script>
 </body>
 </html>
-
 

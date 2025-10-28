@@ -438,21 +438,9 @@
             color: white;
             text-shadow: 1px 1px 2px #000;
         }
-
-        /* Logo oculto para precarga */
-        .logo-preload {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
-            width: 1px;
-            height: 1px;
-        }
     </style>
 </head>
 <body>
-    <!-- Logo oculto para precarga -->
-    <img id="logo-preload" class="logo-preload" src="https://raw.githubusercontent.com/JAVIERGAR777/Medios-Hechos-Noticiables/main/image1.png" alt="Logo">
-    
     <div class="container">
         <header>
             <h1>Reporte Diario de Medios y Victimología</h1>
@@ -489,7 +477,6 @@
         </div>
         
         <div class="event-type-container" id="event-type-cards">
-            <!-- Los contadores por tipo de evento se insertarán aquí mediante JavaScript -->
         </div>
         
         <div class="map-container">
@@ -520,10 +507,6 @@
                     <span>Escruche</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: #4c90af;"></div>
-                    <span>Escruche en edificio</span>
-                </div>
-                <div class="legend-item">
                     <div class="legend-color" style="background-color: #4d460f;"></div>
                     <span>Robo en comercio</span>
                 </div>                                
@@ -549,7 +532,6 @@
                     </tr>
                 </thead>
                 <tbody id="events-table-body">
-                    <!-- Los datos se insertarán aquí mediante JavaScript -->
                 </tbody>
             </table>
         </div>
@@ -565,10 +547,8 @@
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        // URL de la API de Sheetbest
         const SHEETBEST_URL = 'https://api.sheetbest.com/sheets/63d0e8d5-5d04-468f-baea-a951c8d5c55a';
         
-        // Colores para los diferentes tipos de eventos
         const eventColors = {
             "Entradera": "#1e88e5",
             "Robo en Vía Publica": "#e61f1f",
@@ -579,70 +559,15 @@
             "Robo en comercio": "#4d460f"
         };
 
-        // Variables globales
         let map;
         let allEventsData = [];
         let currentDate = '';
         let mapMarkers = [];
         let filteredEvents = [];
-        let logoImage = null;
         
-        // Precargar el logo al iniciar
-        function preloadLogo() {
-            return new Promise((resolve, reject) => {
-                // PRIMERA OPCIÓN: GitHub Raw con timestamp para evitar cache
-                const timestamp = new Date().getTime();
-                const img = new Image();
-                img.crossOrigin = 'Anonymous';
-                
-                // Intentamos varias fuentes por si falla una
-                const imageSources = [
-                    `https://raw.githubusercontent.com/JAVIERGAR777/Medios-Hechos-Noticiables/main/image1.png?t=${timestamp}`,
-                    'https://raw.githubusercontent.com/JAVIERGAR777/Medios-Hechos-Noticiables/main/image1.png',
-                    // SEGUNDA OPCIÓN: Si GitHub falla, usar un servicio proxy
-                    `https://images.weserv.nl/?url=https://raw.githubusercontent.com/JAVIERGAR777/Medios-Hechos-Noticiables/main/image1.png&t=${timestamp}`
-                ];
-                
-                let currentSourceIndex = 0;
-                
-                function tryNextSource() {
-                    if (currentSourceIndex >= imageSources.length) {
-                        reject(new Error('No se pudo cargar el logo desde ninguna fuente'));
-                        return;
-                    }
-                    
-                    img.src = imageSources[currentSourceIndex];
-                    console.log('Intentando cargar logo desde:', imageSources[currentSourceIndex]);
-                    
-                    img.onload = function() {
-                        console.log('Logo cargado exitosamente desde:', imageSources[currentSourceIndex]);
-                        logoImage = img;
-                        resolve(img);
-                    };
-                    
-                    img.onerror = function() {
-                        console.error('Error cargando logo desde:', imageSources[currentSourceIndex]);
-                        currentSourceIndex++;
-                        setTimeout(tryNextSource, 100);
-                    };
-                }
-                
-                tryNextSource();
-                
-                // Timeout general
-                setTimeout(() => {
-                    if (!logoImage) {
-                        reject(new Error('Timeout al cargar el logo'));
-                    }
-                }, 10000);
-            });
-        }
-        
-        // Inicializar el mapa
         function initMap() {
             map = L.map('map').setView([-34.921, -57.955], 12);
             
-            // Añadir capa de OpenStreetMap
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
@@ -695,7 +620,7 @@
                         entorno: item['Entorno en que ocurre el evento'] || '',
                         descripcion: item['Breve Descripción de la Noticia'] || '',
                         victimas: item['Cantidad de Victimas ( solo indicar en número)'] || 0,
-                        enlace: item['Link de Nota'] || '',
+                        enlace: item['Link de Nota ( Elegir el de mayor relevancia)'] || '',
                         titulo: item['Titulo de la Noticia'] || 'Sin título',
                         medio: item['Medio'] || 'Medio no especificado',
                         cobertura: item['Número de medios que cubrieron la noticia'] || '1'
@@ -956,7 +881,6 @@
             return dateStr;
         }
         
-        // Función para obtener la hora actual formateada
         function getCurrentTime() {
             const now = new Date();
             const hours = now.getHours().toString().padStart(2, '0');
@@ -966,48 +890,51 @@
         
         function drawLogoFromURL(pdf, x, y, width, height) {
             return new Promise((resolve, reject) => {
-                if (logoImage) {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous'; 
+                img.src = 'https://raw.githubusercontent.com/JAVIERGAR777/Medios-Hechos-Noticiables/main/image1.png';
+                
+                img.onload = function() {
                     try {
-                        pdf.addImage(logoImage, 'PNG', x, y, width, height);
-                        console.log('Logo añadido al PDF exitosamente');
+                        pdf.addImage(img, 'PNG', x, y, width, height);
                         resolve();
                     } catch (error) {
-                        console.error('Error añadiendo logo al PDF:', error);
-                        drawLogoFallback(pdf, x, y, width, height);
-                        resolve();
+                        reject(error);
                     }
-                } else {
-                    console.warn('Logo no disponible, usando fallback');
-                    drawLogoFallback(pdf, x, y, width, height);
-                    resolve();
-                }
+                };
+                
+                img.onerror = function() {
+                    reject(new Error('Error al cargar la imagen'));
+                };
+                
+                setTimeout(() => {
+                    reject(new Error('Timeout al cargar la imagen'));
+                }, 5000);
             });
         }
 
-        function drawLogoFallback(pdf, x, y, width, height) {
-            // Fallback: dibujar un logo simple
-            pdf.setFillColor(0, 88, 94); // #00585e
+        function drawLogo(pdf, x, y, width, height) {
+            pdf.setFillColor(0, 88, 94); 
             pdf.rect(x, y, width, height, 'F');
             
-            // Dibujar texto dentro del logo
             pdf.setTextColor(255, 255, 255);
-            pdf.setFontSize(8);
+            pdf.setFontSize(10);
             pdf.setFont(undefined, 'bold');
-            pdf.text("GOB", x + width/2, y + height/2, { align: 'center', baseline: 'middle' });
-            pdf.setTextColor(0, 0, 0);
+            pdf.text("LOGO", x + width/2, y + height/2, { align: 'center', baseline: 'middle' });
         }
         
         async function captureMap() {
             try {
                 const mapContainer = document.getElementById('map');
                 
+                // MEJORA DE RESOLUCIÓN: Mantenemos el tamaño original pero con mejor calidad
                 const canvas = await html2canvas(mapContainer, {
                     useCORS: true,
                     allowTaint: true,
                     backgroundColor: null,
-                    scale: 3,
+                    scale: 3, // Alta resolución pero manteniendo proporciones
                     logging: false,
-                    quality: 1,
+                    quality: 1, // Máxima calidad
                     removeContainer: true,
                     onclone: function(clonedDoc) {
                         const clonedMap = clonedDoc.getElementById('map');
@@ -1044,22 +971,20 @@
                 const normalFontSize = 15;
                 const smallFontSize = 13;
                 
-                // INTENTAR USAR EL LOGO PRECARGADO
                 try {
                     await drawLogoFromURL(pdf, 15, 15, 30, 18);
                 } catch (e) {
-                    console.error('Error con el logo:', e);
-                    drawLogoFallback(pdf, 15, 15, 30, 18);
+                    console.error('Error cargando logo:', e);
+                    drawLogo(pdf, 15, 15, 30, 18); 
                 }
                 
-                pdf.setDrawColor(0, 174, 195);
+                pdf.setDrawColor(0, 174, 195); 
                 pdf.setLineWidth(0.5);
                 pdf.line(15, 35, 195, 35);
                 
-                // Títulos
                 pdf.setFontSize(headerFontSize);
                 pdf.setFont(undefined, 'bold');
-                pdf.setTextColor(0, 174, 195);
+                pdf.setTextColor(0, 174, 195); 
                 pdf.text("SECRETARÍA DE SEGURIDAD", 15, 42);
                 
                 pdf.setFontSize(18);
@@ -1067,7 +992,7 @@
                 pdf.text("RELEVAMIENTO DE", 15, 50);
                 pdf.text("MEDIOS", 15, 58);
                 
-                pdf.setDrawColor(0, 174, 195);
+                pdf.setDrawColor(0, 174, 195); 
                 pdf.line(15, 62, 195, 62);
                 
                 pdf.setFontSize(normalFontSize);
@@ -1085,7 +1010,6 @@
                 
                 let yPosition = 125;
                 
-                // Detalles de cada noticia
                 pdf.setFontSize(headerFontSize);
                 pdf.setFont(undefined, 'bold');
 
@@ -1095,7 +1019,7 @@
                             pdf.addPage();
                             yPosition = 20;
                         }
-                        pdf.setDrawColor(200, 200, 200);
+                        pdf.setDrawColor(200, 200, 200); 
                         pdf.setLineWidth(0.3);
                         pdf.line(15, yPosition - 2, 195, yPosition - 2);
                         yPosition += 3;
@@ -1108,10 +1032,9 @@
                     
                     pdf.setTextColor(0, 88, 94);
                     pdf.text(`#${index + 1}`, 20, yPosition);
-                    pdf.setTextColor(0, 0, 0);
+                    pdf.setTextColor(0, 0, 0); 
                     yPosition += 7;
                     
-                    // TIPOLOGÍA DEL EVENTO
                     pdf.setFontSize(normalFontSize);
                     pdf.setFont(undefined, 'bold');
                     pdf.text("Tipología:", 20, yPosition);
@@ -1129,7 +1052,6 @@
                     pdf.text(splitTipologia, 20, yPosition + 5);
                     yPosition += espacioTipologia + 10;
                     
-                    // TÍTULO
                     pdf.setFont(undefined, 'bold');
                     pdf.text("Título:", 20, yPosition);
                     pdf.setFont(undefined, 'normal');
@@ -1146,7 +1068,7 @@
                     pdf.text(splitTitulo, 20, yPosition + 5);
                     yPosition += espacioTitulo + 10;
                     
-                    // RESUMEN
+                    // RESUMEN EN NEGRITA - SEGUNDO
                     pdf.setFont(undefined, 'bold');
                     pdf.text("Resumen:", 20, yPosition);
                     pdf.setFont(undefined, 'normal');
@@ -1163,7 +1085,6 @@
                     pdf.text(splitDesc, 20, yPosition + 5);
                     yPosition += espacioDesc + 10;
                     
-                    // MEDIO Y COBERTURA
                     const medio = event.medio || 'Medio no especificado';
                     const splitMedio = pdf.splitTextToSize(`Medio: ${medio}`, 170);
                     
@@ -1185,7 +1106,6 @@
                     pdf.text(`Cobertura: ${cobertura} medio(s)`, 20, yPosition);
                     yPosition += 7;
                     
-                    // LINK
                     pdf.setTextColor(0, 0, 255);
                     
                     if (yPosition + 10 > 270) {
@@ -1230,8 +1150,8 @@
                     pdf.setFont(undefined, 'normal');
                     
                     let refY = legendY + 20;
-                    const eventsPerColumn = 8;
-                    const columnWidth = 90;
+                    const eventsPerColumn = 8; 
+                    const columnWidth = 90; 
                     
                     eventsForDate.forEach((event, index) => {
                         if (event.coordenadas) {
@@ -1257,12 +1177,13 @@
                                         refY += 6;
                                     }
                                 });
-                                refY += 2;
+                                refY += 2; // Espacio extra entre referencias
                             }
                         }
                     });
                 }
                 
+                // Guardar el PDF
                 pdf.save(`relevamiento-medios-${currentDate.replace(/\//g, '-')}.pdf`);
                 
                 pdfBtn.textContent = originalText;
@@ -1301,18 +1222,8 @@
             alert('La funcionalidad de reporte quincenal estará disponible próximamente.');
         });
         
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             initMap();
-            
-            // Precargar el logo antes de cargar los datos
-            try {
-                console.log('Precargando logo...');
-                await preloadLogo();
-                console.log('Logo precargado exitosamente');
-            } catch (error) {
-                console.warn('No se pudo precargar el logo:', error.message);
-            }
-            
             loadData();
         });
     </script>
